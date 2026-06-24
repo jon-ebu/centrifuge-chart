@@ -1,7 +1,7 @@
 // Client-side export utilities
 
 import { buildRotorSVG, buildInvalidSVG, svgToPngDataURL, svgToDataURL } from './render'
-import { isBalanceable, findConfig } from './math'
+import { isBalanceable } from './math'
 
 export function downloadURL(url: string, filename: string): void {
   const a = document.createElement('a')
@@ -44,7 +44,7 @@ export async function exportCardPNG(
   downloadURL(url, `centrifuge-K${K}-n${n}.png`)
 }
 
-interface PosterCard {
+export interface PosterCard {
   n: number
   balanceable: boolean
   activeSlots: Set<number>
@@ -176,34 +176,14 @@ function buildPosterSVG(K: number, cards: PosterCard[], cols: number): SVGSVGEle
   return svg
 }
 
-export async function exportFullPoster(K: number, cols = 6): Promise<void> {
-  const cards: PosterCard[] = []
-  for (let n = 1; n <= K; n++) {
-    const cfg = findConfig(n, K)
-    const balanceable = cfg !== null
-    const activeSlots = cfg ? new Set(cfg.slots) : new Set<number>()
-    const fillColor = n % 2 === 0 ? '#3b82f6' : '#ef4444'
-    const slotTypeMap = new Map<number, number>()
-    if (cfg) cfg.slots.forEach((s, i) => slotTypeMap.set(s, cfg.slotTypes[i]))
-    cards.push({ n, balanceable, activeSlots, fillColor, slotTypeMap })
-  }
-  const svg = buildPosterSVG(K, cards, cols)
+export async function exportFullPoster(K: number, cardsData: PosterCard[], cols = 6): Promise<void> {
+  const svg = buildPosterSVG(K, cardsData, cols)
   const url = await svgToPngDataURL(svg, 3)
   downloadURL(url, `centrifuge-balance-chart-K${K}.png`)
 }
 
-export async function exportPosterSVG(K: number, cols = 6): Promise<void> {
-  const cards: PosterCard[] = []
-  for (let n = 1; n <= K; n++) {
-    const cfg = findConfig(n, K)
-    const balanceable = cfg !== null
-    const activeSlots = cfg ? new Set(cfg.slots) : new Set<number>()
-    const fillColor = n % 2 === 0 ? '#3b82f6' : '#ef4444'
-    const slotTypeMap = new Map<number, number>()
-    if (cfg) cfg.slots.forEach((s, i) => slotTypeMap.set(s, cfg.slotTypes[i]))
-    cards.push({ n, balanceable, activeSlots, fillColor, slotTypeMap })
-  }
-  const svg = buildPosterSVG(K, cards, cols)
+export async function exportPosterSVG(K: number, cardsData: PosterCard[], cols = 6): Promise<void> {
+  const svg = buildPosterSVG(K, cardsData, cols)
   const url = svgToDataURL(svg)
   downloadURL(url, `centrifuge-balance-chart-K${K}.svg`)
 }

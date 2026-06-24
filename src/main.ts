@@ -3,7 +3,8 @@ import { uniquePrimeFactors, findConfig, findAllConfigs, checkBalance, findGaps,
 import { buildRotorSVG, buildInvalidSVG } from './render'
 import {
   exportCardSVG, exportCardPNG,
-  exportFullPoster, exportPosterSVG
+  exportFullPoster, exportPosterSVG,
+  PosterCard
 } from './export'
 
 // ─── State ──────────────────────────────────────────────────────────────────
@@ -362,12 +363,22 @@ function initApp(): void {
     exportCardPNG(selectedN, K, editorActiveSlots, editorFillColor, editorSlotColors)
   })
 
-  // Poster export
+  // Poster export — snapshot current card states (respects alt navigation + uniform color)
+  function currentPosterCards(): PosterCard[] {
+    return cards.map(c => ({
+      n: c.n,
+      balanceable: c.balanceable,
+      activeSlots: c.activeSlots,
+      fillColor: uniformColor ? '#3b82f6' : c.fillColor,
+      slotTypeMap: (c.customized || uniformColor) ? new Map() : c.slotTypeMap,
+    }))
+  }
+
   document.getElementById('export-poster-png')!.addEventListener('click', () => {
-    exportFullPoster(K)
+    exportFullPoster(K, currentPosterCards())
   })
   document.getElementById('export-poster-svg')!.addEventListener('click', () => {
-    exportPosterSVG(K)
+    exportPosterSVG(K, currentPosterCards())
   })
 
   // Close editor on backdrop click
