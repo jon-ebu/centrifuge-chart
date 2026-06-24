@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Centrifuge Balance Chart</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='none' stroke='%233b82f6' stroke-width='8'/><circle cx='50' cy='12' r='8' fill='%233b82f6'/><circle cx='50' cy='88' r='8' fill='%233b82f6'/></svg>" />
+  <script type="module" src="/src/main.ts"></script>
+</head>
+<body class="min-h-screen bg-gray-50">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-30 no-print">
+    <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4 flex-wrap">
+      <div class="flex items-center gap-3 flex-1 min-w-0">
+        <!-- Logo mark -->
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" class="flex-shrink-0">
+          <circle cx="16" cy="16" r="13" stroke="#3b82f6" stroke-width="2.5"/>
+          <circle cx="16" cy="4" r="2.5" fill="#3b82f6"/>
+          <circle cx="16" cy="28" r="2.5" fill="#3b82f6"/>
+          <circle cx="4" cy="16" r="2.5" fill="#3b82f6"/>
+          <circle cx="28" cy="16" r="2.5" fill="#3b82f6"/>
+          <circle cx="16" cy="16" r="2" fill="#cbd5e1"/>
+        </svg>
+        <div>
+          <h1 class="text-base font-bold text-gray-900 leading-tight">Centrifuge Balance Chart</h1>
+          <p class="text-xs text-gray-500 leading-tight">Dynamic rotor configuration generator</p>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <div class="flex items-center gap-2">
+          <label for="k-input" class="text-sm font-medium text-gray-700 whitespace-nowrap">Rotor slots <span class="text-gray-400">(K)</span>:</label>
+          <input
+            id="k-input"
+            type="number"
+            min="6" max="48" step="1"
+            class="w-16 px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center font-mono"
+          />
+        </div>
+        <!-- Quick presets -->
+        <div class="flex gap-1">
+          <button data-k="12" class="btn-ghost text-xs px-2.5 py-1.5 rounded font-mono">12</button>
+          <button data-k="16" class="btn-ghost text-xs px-2.5 py-1.5 rounded font-mono">16</button>
+          <button data-k="24" class="btn-ghost text-xs px-2.5 py-1.5 rounded font-mono">24</button>
+          <button data-k="30" class="btn-ghost text-xs px-2.5 py-1.5 rounded font-mono bg-blue-600 text-white">30</button>
+          <button data-k="36" class="btn-ghost text-xs px-2.5 py-1.5 rounded font-mono">36</button>
+          <button data-k="48" class="btn-ghost text-xs px-2.5 py-1.5 rounded font-mono">48</button>
+        </div>
+      </div>
+
+      <!-- Card size slider -->
+      <div class="flex items-center gap-2 no-print">
+        <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Card size:</label>
+        <input
+          id="size-slider"
+          type="range"
+          min="0.5" max="2.0" step="0.1" value="1.0"
+          class="w-24 accent-blue-600"
+        />
+        <span id="size-label" class="text-xs font-mono text-gray-500 w-8">100%</span>
+      </div>
+
+      <!-- Info button -->
+      <button id="info-btn" class="btn-ghost text-xs gap-1.5 no-print" title="How the math works">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+        How it works
+      </button>
+
+      <!-- Export buttons -->
+      <div class="flex gap-2 no-print">
+        <button id="export-poster-png" class="btn-secondary text-xs gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+          PNG Poster
+        </button>
+        <button id="export-poster-svg" class="btn-secondary text-xs gap-1.5">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+          SVG Poster
+        </button>
+      </div>
+    </div>
+
+    <!-- Info bar -->
+    <div class="bg-gray-50 border-t border-gray-100 px-4 sm:px-6 py-1.5 flex gap-6 text-xs text-gray-500">
+      <span>Prime factors: <strong class="text-gray-700 font-mono" id="info-primes">—</strong></span>
+      <span>Balanceable configs: <strong class="text-gray-700 font-mono" id="info-balanced">—</strong></span>
+      <div class="ml-auto flex items-center gap-4 flex-wrap">
+        <span class="text-gray-400">Click any card to edit · <span class="text-blue-400 font-medium">●</span> Blue = pairs · <span class="text-red-400 font-medium">●</span> Red = triangles · × = impossible</span>
+        <label class="flex items-center gap-1.5 cursor-pointer select-none whitespace-nowrap">
+          <input type="checkbox" id="uniform-color-toggle" class="accent-blue-600 cursor-pointer"/>
+          <span class="text-gray-500 font-medium">Uniform color</span>
+        </label>
+        <label class="flex items-center gap-1.5 cursor-pointer select-none whitespace-nowrap">
+          <input type="checkbox" id="gap-toggle" class="accent-blue-600 cursor-pointer"/>
+          <span class="text-gray-500 font-medium">Gap count</span>
+        </label>
+        <div id="gap-controls" class="hidden flex items-center gap-1.5 whitespace-nowrap">
+          <span class="text-gray-400">min:</span>
+          <input type="range" id="gap-slider" min="1" max="20" value="4" class="w-20 accent-blue-600"/>
+          <span id="gap-label" class="font-mono text-gray-600 w-4">4</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-6">
+    <!-- Grid -->
+    <div
+      id="grid"
+      class="flex flex-wrap gap-3 justify-start"
+    ></div>
+  </main>
+
+  <!-- Editor panel (sidebar modal) -->
+  <div id="editor-backdrop" class="fixed inset-0 bg-black/20 z-40 hidden no-print" aria-hidden="true"></div>
+  <aside
+    id="editor-panel"
+    class="hidden fixed right-0 top-0 bottom-0 z-50 w-80 bg-white border-l border-gray-200 shadow-xl flex-col no-print"
+    style="overflow-y: auto;"
+  >
+    <!-- Editor header -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 flex-shrink-0">
+      <div>
+        <h2 id="editor-title" class="text-base font-bold text-gray-900">Configuration</h2>
+        <p class="text-xs text-gray-500 mt-0.5">Click slots to toggle · drag to multi-select</p>
+      </div>
+      <button id="editor-close" class="btn-ghost p-1.5 -mr-1" title="Close">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+      </button>
+    </div>
+
+    <!-- SVG canvas -->
+    <div id="editor-svg-container" class="flex-shrink-0 p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-center" style="min-height: 320px;"></div>
+
+    <!-- Status -->
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+      <span id="editor-count" class="text-sm text-gray-600"></span>
+      <span id="editor-status-badge" class="badge-balanced">
+        <span id="editor-status"></span>
+      </span>
+    </div>
+
+    <!-- Controls -->
+    <div class="px-5 py-4 flex flex-col gap-4 flex-1">
+      <!-- Color picker -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Fill Color</label>
+        <div class="flex items-center gap-3">
+          <input
+            id="editor-fill-color"
+            type="color"
+            value="#3b82f6"
+            class="w-10 h-10 rounded-lg border border-gray-300 cursor-pointer p-0.5"
+          />
+          <div class="flex gap-2 flex-wrap">
+            <button class="w-7 h-7 rounded-full border-2 border-white shadow ring-1 ring-gray-200" style="background:#3b82f6" title="Blue" onclick="document.getElementById('editor-fill-color').value='#3b82f6'; document.getElementById('editor-fill-color').dispatchEvent(new Event('input'))"></button>
+            <button class="w-7 h-7 rounded-full border-2 border-white shadow ring-1 ring-gray-200" style="background:#ef4444" title="Red" onclick="document.getElementById('editor-fill-color').value='#ef4444'; document.getElementById('editor-fill-color').dispatchEvent(new Event('input'))"></button>
+            <button class="w-7 h-7 rounded-full border-2 border-white shadow ring-1 ring-gray-200" style="background:#22c55e" title="Green" onclick="document.getElementById('editor-fill-color').value='#22c55e'; document.getElementById('editor-fill-color').dispatchEvent(new Event('input'))"></button>
+            <button class="w-7 h-7 rounded-full border-2 border-white shadow ring-1 ring-gray-200" style="background:#f59e0b" title="Amber" onclick="document.getElementById('editor-fill-color').value='#f59e0b'; document.getElementById('editor-fill-color').dispatchEvent(new Event('input'))"></button>
+            <button class="w-7 h-7 rounded-full border-2 border-white shadow ring-1 ring-gray-200" style="background:#8b5cf6" title="Violet" onclick="document.getElementById('editor-fill-color').value='#8b5cf6'; document.getElementById('editor-fill-color').dispatchEvent(new Event('input'))"></button>
+            <button class="w-7 h-7 rounded-full border-2 border-white shadow ring-1 ring-gray-200" style="background:#0f172a" title="Black" onclick="document.getElementById('editor-fill-color').value='#0f172a'; document.getElementById('editor-fill-color').dispatchEvent(new Event('input'))"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex flex-col gap-2">
+        <button id="editor-save" class="btn-primary w-full justify-center">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3.5 3.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L7.5 9.293V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5a.5.5 0 0 1 0 1H2z"/></svg>
+          Save to Grid
+        </button>
+        <button id="editor-reset" class="btn-secondary w-full justify-center">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+          Reset to Default
+        </button>
+      </div>
+
+      <!-- Export this card -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Export this card</label>
+        <div class="flex gap-2">
+          <button id="editor-export-png" class="btn-secondary flex-1 justify-center text-xs">PNG</button>
+          <button id="editor-export-svg" class="btn-secondary flex-1 justify-center text-xs">SVG</button>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="mt-auto pt-4 border-t border-gray-100">
+        <p class="text-xs text-gray-400 leading-relaxed">
+          <strong class="text-gray-500">Blue</strong> = even n (pairs/polygons) ·
+          <strong class="text-gray-500">Red</strong> = odd n (complex combination) ·
+          <strong class="text-gray-500">✗</strong> = cannot be balanced
+        </p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Info modal -->
+  <div id="info-backdrop" class="fixed inset-0 bg-black/40 z-50 hidden no-print" aria-hidden="true"></div>
+  <div id="info-modal" class="fixed inset-0 z-50 hidden no-print overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
+    <div class="min-h-full flex items-start justify-center p-4 sm:p-8">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-4">
+
+        <!-- Modal header -->
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="#3b82f6"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+            </div>
+            <div>
+              <h2 id="info-modal-title" class="text-lg font-bold text-gray-900">How Centrifuge Balancing Works</h2>
+              <p class="text-xs text-gray-500">The math behind the chart — no PhD required</p>
+            </div>
+          </div>
+          <button id="info-close" class="btn-ghost p-1.5 -mr-1 text-gray-400 hover:text-gray-700" title="Close">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+          </button>
+        </div>
+
+        <!-- Modal body -->
+        <div class="px-6 py-6 flex flex-col gap-8 text-sm text-gray-700 leading-relaxed">
+
+          <!-- Why it matters -->
+          <section>
+            <h3 class="text-base font-bold text-gray-900 mb-2">Why does balance matter?</h3>
+            <div class="flex gap-4 items-start">
+              <div class="flex-1">
+                <p>A centrifuge can spin at tens of thousands of RPM. If your samples aren't arranged symmetrically, the rotor wobbles — creating vibrations that can damage the motor, crack tubes, and ruin your samples.</p>
+                <p class="mt-2">Every manufacturer prints a balance chart showing which tube counts are safe. This app generates those charts dynamically for any rotor size.</p>
+              </div>
+              <!-- Unbalanced vs balanced visual -->
+              <div class="flex gap-3 flex-shrink-0">
+                <div class="text-center">
+                  <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="mx-auto">
+                    <!-- ghost ring -->
+                    <circle cx="50" cy="12" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="69" cy="17" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="83" cy="31" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="88" cy="50" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="83" cy="69" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="69" cy="83" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="50" cy="88" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="31" cy="83" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="17" cy="69" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="12" cy="50" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="17" cy="31" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="31" cy="17" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <!-- 2 tubes clustered at top = unbalanced -->
+                    <circle cx="50" cy="12" r="6" fill="#94a3b8"/>
+                    <circle cx="69" cy="17" r="6" fill="#94a3b8"/>
+                    <!-- net force arrow -->
+                    <line x1="50" y1="50" x2="63" y2="28" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+                    <polygon points="63,28 58,34 68,33" fill="#ef4444"/>
+                  </svg>
+                  <p class="text-xs text-red-500 font-medium mt-1">Unbalanced</p>
+                </div>
+                <div class="text-center">
+                  <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="mx-auto">
+                    <circle cx="50" cy="12" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="69" cy="17" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="83" cy="31" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="88" cy="50" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="83" cy="69" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="69" cy="83" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="50" cy="88" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="31" cy="83" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="17" cy="69" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="12" cy="50" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="17" cy="31" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <circle cx="31" cy="17" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                    <!-- balanced pair: opposite slots -->
+                    <circle cx="50" cy="12" r="6" fill="#3b82f6"/>
+                    <circle cx="50" cy="88" r="6" fill="#3b82f6"/>
+                    <!-- forces cancel -->
+                    <line x1="50" y1="50" x2="50" y2="28" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3,2"/>
+                    <line x1="50" y1="50" x2="50" y2="72" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3,2"/>
+                  </svg>
+                  <p class="text-xs text-blue-500 font-medium mt-1">Balanced</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <hr class="border-gray-100"/>
+
+          <!-- Building blocks -->
+          <section>
+            <h3 class="text-base font-bold text-gray-900 mb-1">The building blocks: regular shapes</h3>
+            <p class="mb-4 text-gray-600">Here's the key insight: <strong class="text-gray-800">any regular polygon is perfectly balanced.</strong> If you place tubes at the corners of an equilateral triangle, they pull equally in every direction and cancel out. Same for a pair of opposite tubes, a pentagon, and so on.</p>
+            <div class="grid grid-cols-3 gap-3">
+              <!-- Pair -->
+              <div class="bg-gray-50 rounded-xl p-3 text-center">
+                <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="mx-auto">
+                  <circle cx="50" cy="12" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="69" cy="17" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="83" cy="31" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="88" cy="50" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="83" cy="69" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="69" cy="83" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="50" cy="88" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="31" cy="83" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="17" cy="69" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="12" cy="50" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="17" cy="31" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="31" cy="17" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="50" cy="12" r="6" fill="#3b82f6"/>
+                  <circle cx="50" cy="88" r="6" fill="#3b82f6"/>
+                </svg>
+                <p class="text-xs font-bold text-gray-800 mt-1">Pair (n=2)</p>
+                <p class="text-xs text-gray-500 mt-0.5">Two tubes directly opposite</p>
+              </div>
+              <!-- Triangle -->
+              <div class="bg-gray-50 rounded-xl p-3 text-center">
+                <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="mx-auto">
+                  <circle cx="50" cy="12" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="69" cy="17" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="83" cy="31" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="88" cy="50" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="83" cy="69" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="69" cy="83" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="50" cy="88" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="31" cy="83" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="17" cy="69" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="12" cy="50" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="17" cy="31" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="31" cy="17" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <!-- triangle: slots 0, 4, 8 -->
+                  <circle cx="50" cy="12" r="6" fill="#e53e3e"/>
+                  <circle cx="83" cy="69" r="6" fill="#e53e3e"/>
+                  <circle cx="17" cy="69" r="6" fill="#e53e3e"/>
+                </svg>
+                <p class="text-xs font-bold text-gray-800 mt-1">Triangle (n=3)</p>
+                <p class="text-xs text-gray-500 mt-0.5">Three equally-spaced tubes</p>
+              </div>
+              <!-- Combined n=5 -->
+              <div class="bg-gray-50 rounded-xl p-3 text-center">
+                <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="mx-auto">
+                  <circle cx="50" cy="12" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="69" cy="17" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="83" cy="31" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="88" cy="50" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="83" cy="69" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="69" cy="83" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="50" cy="88" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="31" cy="83" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="17" cy="69" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="12" cy="50" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="17" cy="31" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <circle cx="31" cy="17" r="2.5" fill="none" stroke="#dde3ea" stroke-width="1.2"/>
+                  <!-- pair: slots 1,7 (blue) -->
+                  <circle cx="69" cy="17" r="6" fill="#3b82f6"/>
+                  <circle cx="31" cy="83" r="6" fill="#3b82f6"/>
+                  <!-- triangle: slots 0,4,8 (red) -->
+                  <circle cx="50" cy="12" r="6" fill="#e53e3e"/>
+                  <circle cx="83" cy="69" r="6" fill="#e53e3e"/>
+                  <circle cx="17" cy="69" r="6" fill="#e53e3e"/>
+                </svg>
+                <p class="text-xs font-bold text-gray-800 mt-1">Combined (n=5)</p>
+                <p class="text-xs text-gray-500 mt-0.5">1 pair + 1 triangle</p>
+              </div>
+            </div>
+            <p class="mt-3 text-gray-600">You can stack as many balanced shapes as you need — the combination stays balanced. That's how the algorithm builds every configuration on this chart.</p>
+          </section>
+
+          <hr class="border-gray-100"/>
+
+          <!-- Color coding -->
+          <section>
+            <h3 class="text-base font-bold text-gray-900 mb-3">What the colors tell you</h3>
+            <div class="flex gap-4">
+              <div class="flex-1 bg-blue-50 rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-4 h-4 rounded-full bg-blue-500 flex-shrink-0"></div>
+                  <span class="font-bold text-blue-800">Blue dots</span>
+                </div>
+                <p class="text-blue-700 text-xs leading-relaxed">These slots are part of a <strong>pair</strong> formation — two tubes directly across from each other. Also used for pentagons in 30-slot rotors.</p>
+              </div>
+              <div class="flex-1 bg-red-50 rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-4 h-4 rounded-full bg-red-500 flex-shrink-0"></div>
+                  <span class="font-bold text-red-800">Red dots</span>
+                </div>
+                <p class="text-red-700 text-xs leading-relaxed">These slots are part of a <strong>triangle</strong> formation — three tubes equally spaced around the ring.</p>
+              </div>
+            </div>
+            <p class="mt-3 text-gray-600 text-xs">Cards that are all one color use only one type of shape. Mixed-color cards combine pairs and triangles.</p>
+          </section>
+
+          <hr class="border-gray-100"/>
+
+          <!-- Prime factors rule -->
+          <section>
+            <h3 class="text-base font-bold text-gray-900 mb-2">Which numbers of tubes can be balanced?</h3>
+            <p class="text-gray-600 mb-3">This depends on the number of slots K. Specifically, it depends on K's <strong class="text-gray-800">prime factors</strong> — the prime numbers that divide evenly into K.</p>
+
+            <div class="bg-gray-50 rounded-xl p-4 mb-3">
+              <p class="font-semibold text-gray-800 mb-2">Rule: n tubes are balanceable if n can be built by adding together K's prime factors (with repetition).</p>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
+                <div class="bg-white rounded-lg p-3 border border-gray-200">
+                  <p class="font-bold text-gray-800 text-xs mb-1">K = 30 → primes: 2, 3, 5</p>
+                  <p class="text-xs text-gray-600">n=6 = 2+2+2 ✓</p>
+                  <p class="text-xs text-gray-600">n=7 = 2+2+3 ✓</p>
+                  <p class="text-xs text-gray-600">n=9 = 3+3+3 ✓</p>
+                  <p class="text-xs text-red-500">n=1 = can't make it ✗</p>
+                </div>
+                <div class="bg-white rounded-lg p-3 border border-gray-200">
+                  <p class="font-bold text-gray-800 text-xs mb-1">K = 24 → primes: 2, 3</p>
+                  <p class="text-xs text-gray-600">n=4 = 2+2 ✓</p>
+                  <p class="text-xs text-gray-600">n=5 = 2+3 ✓</p>
+                  <p class="text-xs text-gray-600">n=9 = 3+3+3 ✓</p>
+                  <p class="text-xs text-red-500">n=1 = can't make it ✗</p>
+                </div>
+                <div class="bg-white rounded-lg p-3 border border-gray-200">
+                  <p class="font-bold text-gray-800 text-xs mb-1">K = 10 → primes: 2, 5</p>
+                  <p class="text-xs text-gray-600">n=2 = 2 ✓</p>
+                  <p class="text-xs text-gray-600">n=4 = 2+2 ✓</p>
+                  <p class="text-xs text-red-500">n=3 = can't make it ✗</p>
+                  <p class="text-xs text-red-500">n=7 = can't make it ✗</p>
+                </div>
+              </div>
+            </div>
+            <p class="text-gray-600 text-xs">Rotors with more prime factors (like K=30 with primes 2, 3, and 5) have more valid configurations. Rotors with fewer prime factors are more restrictive.</p>
+          </section>
+
+          <hr class="border-gray-100"/>
+
+          <!-- Impossible -->
+          <section>
+            <h3 class="text-base font-bold text-gray-900 mb-2">Impossible configurations <span class="text-gray-400 font-normal">(the × cards)</span></h3>
+            <div class="flex gap-4 items-start">
+              <div class="flex-1">
+                <p class="text-gray-600">Some counts simply can't be balanced, no matter how you arrange them. The most common:</p>
+                <ul class="mt-2 space-y-1 text-gray-600">
+                  <li class="flex gap-2"><span class="text-red-400 font-bold flex-shrink-0">×</span> <span><strong class="text-gray-800">n = 1:</strong> A single tube has nothing to counterbalance it. There's no polygon with just one point.</span></li>
+                  <li class="flex gap-2"><span class="text-red-400 font-bold flex-shrink-0">×</span> <span><strong class="text-gray-800">n = K − 1:</strong> This is the "mirror" of n=1. One slot is always empty with no counterpart.</span></li>
+                </ul>
+                <p class="mt-2 text-gray-600">Some rotors have more impossible values — K=10 has four (n = 1, 3, 7, 9) because 3 and 7 can't be made from 2s and 5s.</p>
+              </div>
+              <div class="flex-shrink-0 text-center">
+                <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <line x1="22" y1="22" x2="78" y2="78" stroke="#d1d5db" stroke-width="7" stroke-linecap="round"/>
+                  <line x1="78" y1="22" x2="22" y2="78" stroke="#d1d5db" stroke-width="7" stroke-linecap="round"/>
+                  <text x="50" y="56" text-anchor="middle" font-family="system-ui" font-size="26" font-weight="600" fill="#9ca3af">1</text>
+                </svg>
+                <p class="text-xs text-gray-400 font-medium mt-1">n = 1</p>
+              </div>
+            </div>
+          </section>
+
+          <hr class="border-gray-100"/>
+
+          <!-- Full ring -->
+          <section>
+            <h3 class="text-base font-bold text-gray-900 mb-2">The full ring (n = K)</h3>
+            <div class="flex gap-4 items-center">
+              <div class="flex-1">
+                <p class="text-gray-600">When every slot is filled, the rotor is trivially balanced — the weight is perfectly uniform in all directions. This is why the last card in any chart is always valid and shown in blue.</p>
+              </div>
+              <div class="flex-shrink-0">
+                <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="50" cy="12" r="5.5" fill="#3b82f6"/>
+                  <circle cx="69" cy="17" r="5.5" fill="#3b82f6"/>
+                  <circle cx="83" cy="31" r="5.5" fill="#3b82f6"/>
+                  <circle cx="88" cy="50" r="5.5" fill="#3b82f6"/>
+                  <circle cx="83" cy="69" r="5.5" fill="#3b82f6"/>
+                  <circle cx="69" cy="83" r="5.5" fill="#3b82f6"/>
+                  <circle cx="50" cy="88" r="5.5" fill="#3b82f6"/>
+                  <circle cx="31" cy="83" r="5.5" fill="#3b82f6"/>
+                  <circle cx="17" cy="69" r="5.5" fill="#3b82f6"/>
+                  <circle cx="12" cy="50" r="5.5" fill="#3b82f6"/>
+                  <circle cx="17" cy="31" r="5.5" fill="#3b82f6"/>
+                  <circle cx="31" cy="17" r="5.5" fill="#3b82f6"/>
+                  <text x="50" y="54" text-anchor="middle" font-family="system-ui" font-size="16" font-weight="600" fill="#4a5568">K</text>
+                </svg>
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl flex items-center justify-between">
+          <p class="text-xs text-gray-400">The chart is generated live in your browser — no server involved.</p>
+          <button id="info-close-2" class="btn-primary text-xs px-4 py-2">Got it</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
