@@ -207,6 +207,103 @@ export function findConfig(n: number, K: number): BalanceConfig | null {
   return null
 }
 
+// Enumerate all structurally distinct placements for a polygon list.
+// Enforces start ordering for same-type polygons to avoid permutation duplicates.
+function collectAllPlacements(polygons: number[], K: number, maxSolutions: number): PlaceResult[] {
+  const sorted = [...polygons].sort((a, b) => b - a)
+  const used = new Uint8Array(K)
+  const slotBuf: number[] = []
+  const typeBuf: number[] = []
+  const results: PlaceResult[] = []
+  let iters = 0
+  const MAX_ITERS = 2_000
+
+  function bt(idx: number, prevStart: number): void {
+    if (++iters > MAX_ITERS || results.length >= maxSolutions) return
+    if (idx === sorted.length) {
+      const pairs = slotBuf.map((s, i) => [s, typeBuf[i]] as [number, number])
+      pairs.sort((a, b) => a[0] - b[0])
+      results.push({ slots: pairs.map(p => p[0]), types: pairs.map(p => p[1]) })
+      return
+    }
+    const p = sorted[idx]
+    const step = K / p
+    // Enforce ascending start order for consecutive same-type polygons
+    const isSameType = idx > 0 && sorted[idx] === sorted[idx - 1]
+    const startFrom = isSameType ? prevStart + 1 : 0
+    for (let start = startFrom; start < step; start++) {
+      if (iters > MAX_ITERS || results.length >= maxSolutions) break
+      const slots: number[] = []
+      for (let j = 0; j < p; j++) slots.push((start + j * step) % K)
+      if (slots.every(s => !used[s])) {
+        slots.forEach(s => { used[s] = 1; slotBuf.push(s); typeBuf.push(p) })
+        bt(idx + 1, start)
+        slots.forEach(s => { used[s] = 0 })
+        slotBuf.splice(slotBuf.length - slots.length, slots.length)
+        typeBuf.splice(typeBuf.length - slots.length, slots.length)
+      }
+    }
+  }
+  bt(0, -1)
+  return results
+}
+
+// Canonical rotation key: smallest lexicographic rotation of the sorted slot list.
+function canonicalKey(slots: number[], K: number): string {
+  const s = [...slots].sort((a, b) => a - b)
+  let best = s.join(',')
+  for (let k = 1; k < K; k++) {
+    const r = s.map(x => (x + k) % K).sort((a, b) => a - b).join(',')
+    if (r < best) best = r
+  }
+  return best
+}
+
+// All unique-up-to-rotation configurations for n tubes in a K-slot rotor.
+// The default config (same as findConfig) is always first.
+export function findAllConfigs(n: number, K: number, maxConfigs = 24): BalanceConfig[] {
+  if (n <= 0 || n > K) return []
+  if (n === K) { const c = findConfig(n, K); return c ? [c] : [] }
+
+  const primes = uniquePrimeFactors(K)
+  const seen = new Set<string>()
+  const results: BalanceConfig[] = []
+
+  function tryAdd(slots: number[], types: number[], decomp: number[], complement: boolean): void {
+    if (results.length >= maxConfigs) return
+    const key = canonicalKey(slots, K)
+    if (!seen.has(key)) { seen.add(key); results.push({ slots, slotTypes: types, complement, decomposition: decomp }) }
+  }
+
+  // Default config first so altIndex=0 always matches the existing grid rendering
+  const def = findConfig(n, K)
+  if (def) tryAdd(def.slots, def.slotTypes, def.decomposition, def.complement)
+
+  // All direct decompositions
+  for (const decomp of getDecompositions(n, primes)) {
+    if (results.length >= maxConfigs) break
+    for (const { slots, types } of collectAllPlacements(decomp, K, (maxConfigs - results.length) * 4)) {
+      tryAdd(slots, types, decomp, false)
+      if (results.length >= maxConfigs) break
+    }
+  }
+
+  // Complement configs (complement of K−n placements)
+  if (results.length < maxConfigs) {
+    for (const decomp of getDecompositions(K - n, primes)) {
+      if (results.length >= maxConfigs) break
+      for (const { slots: cs } of collectAllPlacements(decomp, K, (maxConfigs - results.length) * 4)) {
+        if (results.length >= maxConfigs) break
+        const compSet = new Set(cs)
+        const slots = Array.from({ length: K }, (_, i) => i).filter(i => !compSet.has(i))
+        tryAdd(slots, new Array(slots.length).fill(0), decomp, true)
+      }
+    }
+  }
+
+  return results
+}
+
 export interface GapInfo { length: number; midAngle: number }
 
 // Returns ALL consecutive runs of empty slots, sorted longest-first.

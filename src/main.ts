@@ -1,5 +1,5 @@
 import './style.css'
-import { uniquePrimeFactors, findConfig, checkBalance, findGaps } from './math'
+import { uniquePrimeFactors, findConfig, findAllConfigs, checkBalance, findGaps, BalanceConfig } from './math'
 import { buildRotorSVG, buildInvalidSVG } from './render'
 import {
   exportCardSVG, exportCardPNG,
@@ -16,6 +16,8 @@ interface CardState {
   slotColors: Map<number, string>
   slotTypeMap: Map<number, number>  // slotIndex → polygon size for per-polygon coloring
   customized: boolean
+  alternatives: BalanceConfig[]     // all unique-up-to-rotation configs for this n
+  altIndex: number                  // which alternative is currently displayed
 }
 
 let K = 30
@@ -40,11 +42,12 @@ function buildCards(k: number): CardState[] {
   for (let n = 1; n <= k; n++) {
     const cfg = findConfig(n, k)
     const balanceable = cfg !== null
+    const alternatives = balanceable ? findAllConfigs(n, k) : []
     const activeSlots = cfg ? new Set(cfg.slots) : new Set<number>()
     const fillColor = defaultColor(n)
     const slotTypeMap = new Map<number, number>()
     if (cfg) cfg.slots.forEach((s, i) => slotTypeMap.set(s, cfg.slotTypes[i]))
-    result.push({ n, balanceable, activeSlots, fillColor, slotColors: new Map(), slotTypeMap, customized: false })
+    result.push({ n, balanceable, activeSlots, fillColor, slotColors: new Map(), slotTypeMap, customized: false, alternatives, altIndex: 0 })
   }
   return result
 }
@@ -59,6 +62,33 @@ function baseCardSize(k: number): number {
   return 136
 }
 
+function cardSVG(card: CardState, cardSize: number): SVGSVGElement {
+  const slotTypeMap = (card.customized || uniformColor) ? undefined : card.slotTypeMap
+  const fillColor = uniformColor ? '#3b82f6' : card.fillColor
+  const gapBadges = showGapBadge && card.balanceable
+    ? findGaps(card.activeSlots, K).filter(g => g.length >= gapThreshold)
+    : undefined
+  return card.balanceable
+    ? buildRotorSVG({ K, activeSlots: card.activeSlots, size: cardSize, fillColor, slotColors: card.slotColors, slotTypeMap, gapBadges, label: String(card.n) })
+    : buildInvalidSVG(cardSize, String(card.n))
+}
+
+// Refresh a single card's SVG + alt counter without rebuilding the whole grid.
+function refreshCard(n: number): void {
+  const card = cards.find(c => c.n === n)!
+  const wrapper = document.getElementById(`card-${n}`)
+  if (!wrapper) return
+  const cardSize = Math.round(baseCardSize(K) * cardScale)
+  const newSvg = cardSVG(card, cardSize)
+  newSvg.style.display = 'block'
+  const oldSvg = wrapper.querySelector('svg')
+  if (oldSvg) wrapper.replaceChild(newSvg, oldSvg)
+  const counter = wrapper.querySelector('.alt-counter') as HTMLElement | null
+  if (counter && card.alternatives.length > 1) {
+    counter.textContent = `${card.altIndex + 1}/${card.alternatives.length}`
+  }
+}
+
 function renderGrid(): void {
   const container = document.getElementById('grid')!
   container.innerHTML = ''
@@ -67,21 +97,13 @@ function renderGrid(): void {
 
   cards.forEach(card => {
     const wrapper = document.createElement('div')
+    wrapper.id = `card-${card.n}`
     wrapper.className = card.balanceable ? 'card group relative' : 'card-invalid relative'
     wrapper.style.width = `${cardSize}px`
     wrapper.style.height = `${cardSize}px`
     wrapper.title = card.balanceable ? `n = ${card.n} — click to edit` : `n = ${card.n} — cannot be balanced`
 
-    // SVG with label embedded inside the ring
-    const label = String(card.n)
-    const slotTypeMap = (card.customized || uniformColor) ? undefined : card.slotTypeMap
-    const fillColor = uniformColor ? '#3b82f6' : card.fillColor
-    const gapBadges = showGapBadge && card.balanceable
-      ? findGaps(card.activeSlots, K).filter(g => g.length >= gapThreshold)
-      : undefined
-    const svgEl = card.balanceable
-      ? buildRotorSVG({ K, activeSlots: card.activeSlots, size: cardSize, fillColor, slotColors: card.slotColors, slotTypeMap, gapBadges, label })
-      : buildInvalidSVG(cardSize, label)
+    const svgEl = cardSVG(card, cardSize)
     svgEl.style.display = 'block'
     wrapper.appendChild(svgEl)
 
@@ -91,6 +113,46 @@ function renderGrid(): void {
       dot.className = 'absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-400'
       dot.title = 'Manually edited'
       wrapper.appendChild(dot)
+    }
+
+    // Alt navigation: prev/next arrows + counter (only when multiple alts exist)
+    if (card.balanceable && card.alternatives.length > 1) {
+      const bar = document.createElement('div')
+      bar.className = 'absolute bottom-0.5 inset-x-0 flex items-center justify-center gap-0.5 pointer-events-none'
+
+      const makeBtn = (label: string, title: string, onClick: () => void) => {
+        const btn = document.createElement('button')
+        btn.className = 'pointer-events-auto text-gray-400 hover:text-gray-600 w-5 h-5 flex items-center justify-center rounded text-sm leading-none transition-colors hover:bg-gray-100'
+        btn.textContent = label
+        btn.title = title
+        btn.addEventListener('click', (e) => { e.stopPropagation(); onClick() })
+        return btn
+      }
+
+      const counter = document.createElement('span')
+      counter.className = 'alt-counter text-xs text-gray-400 font-mono w-8 text-center pointer-events-none'
+      counter.textContent = `${card.altIndex + 1}/${card.alternatives.length}`
+
+      bar.appendChild(makeBtn('‹', 'Previous arrangement', () => {
+        card.altIndex = (card.altIndex - 1 + card.alternatives.length) % card.alternatives.length
+        const cfg = card.alternatives[card.altIndex]
+        card.activeSlots = new Set(cfg.slots)
+        card.slotTypeMap = new Map()
+        cfg.slots.forEach((s, i) => card.slotTypeMap.set(s, cfg.slotTypes[i]))
+        card.customized = false
+        refreshCard(card.n)
+      }))
+      bar.appendChild(counter)
+      bar.appendChild(makeBtn('›', 'Next arrangement', () => {
+        card.altIndex = (card.altIndex + 1) % card.alternatives.length
+        const cfg = card.alternatives[card.altIndex]
+        card.activeSlots = new Set(cfg.slots)
+        card.slotTypeMap = new Map()
+        cfg.slots.forEach((s, i) => card.slotTypeMap.set(s, cfg.slotTypes[i]))
+        card.customized = false
+        refreshCard(card.n)
+      }))
+      wrapper.appendChild(bar)
     }
 
     if (card.balanceable) {
@@ -142,13 +204,7 @@ function closeEditor(): void {
 
 function highlightSelectedCard(n: number): void {
   clearCardHighlight()
-  const cards = document.querySelectorAll('#grid > div')
-  cards.forEach(el => {
-    const badge = el.querySelector('div')
-    if (badge?.textContent === String(n)) {
-      el.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2')
-    }
-  })
+  document.getElementById(`card-${n}`)?.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2')
 }
 
 function clearCardHighlight(): void {
@@ -230,6 +286,7 @@ function resetCard(): void {
     card.slotTypeMap = new Map()
     cfg.slots.forEach((s, i) => card.slotTypeMap.set(s, cfg.slotTypes[i]))
   }
+  card.altIndex = 0
   card.fillColor = defaultColor(n)
   editorFillColor = defaultColor(n);
   (document.getElementById('editor-fill-color') as HTMLInputElement).value = editorFillColor
