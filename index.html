@@ -86,7 +86,7 @@
       <span>Prime factors: <strong class="text-gray-700 font-mono" id="info-primes">—</strong></span>
       <span>Balanceable configs: <strong class="text-gray-700 font-mono" id="info-balanced">—</strong></span>
       <div class="ml-auto flex items-center gap-4 flex-wrap">
-        <span class="text-gray-400">Click any card to edit · <span class="text-blue-400 font-medium">●</span> Blue = pairs · <span class="text-red-400 font-medium">●</span> Red = triangles · × = impossible</span>
+        <span class="text-gray-400">Click any card to customize color · <span class="text-blue-400 font-medium">●</span> Blue = pairs · <span class="text-red-400 font-medium">●</span> Red = triangles · × = impossible</span>
         <label class="flex items-center gap-1.5 cursor-pointer select-none whitespace-nowrap">
           <input type="checkbox" id="uniform-color-toggle" class="accent-blue-600 cursor-pointer"/>
           <span class="text-gray-500 font-medium">Uniform color</span>
@@ -122,10 +122,7 @@
   >
     <!-- Editor header -->
     <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200 flex-shrink-0">
-      <div>
-        <h2 id="editor-title" class="text-base font-bold text-gray-900">Configuration</h2>
-        <p class="text-xs text-gray-500 mt-0.5">Click slots to toggle · drag to multi-select</p>
-      </div>
+      <h2 id="editor-title" class="text-base font-bold text-gray-900">Configuration</h2>
       <button id="editor-close" class="btn-ghost p-1.5 -mr-1" title="Close">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
       </button>
@@ -134,16 +131,8 @@
     <!-- SVG canvas -->
     <div id="editor-svg-container" class="flex-shrink-0 p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-center" style="min-height: 320px;"></div>
 
-    <!-- Status -->
-    <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-      <span id="editor-count" class="text-sm text-gray-600"></span>
-      <span id="editor-status-badge" class="badge-balanced">
-        <span id="editor-status"></span>
-      </span>
-    </div>
-
     <!-- Controls -->
-    <div class="px-5 py-4 flex flex-col gap-4 flex-1">
+    <div class="px-5 py-4 flex flex-col gap-5 flex-1">
       <!-- Color picker -->
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Fill Color</label>
@@ -165,18 +154,6 @@
         </div>
       </div>
 
-      <!-- Actions -->
-      <div class="flex flex-col gap-2">
-        <button id="editor-save" class="btn-primary w-full justify-center">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H9.5a1 1 0 0 0-1 1v7.293l2.646-2.647a.5.5 0 0 1 .708.708l-3.5 3.5a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L7.5 9.293V2a2 2 0 0 1 2-2H14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5a.5.5 0 0 1 0 1H2z"/></svg>
-          Save to Grid
-        </button>
-        <button id="editor-reset" class="btn-secondary w-full justify-center">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
-          Reset to Default
-        </button>
-      </div>
-
       <!-- Export this card -->
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Export this card</label>
@@ -184,15 +161,6 @@
           <button id="editor-export-png" class="btn-secondary flex-1 justify-center text-xs">PNG</button>
           <button id="editor-export-svg" class="btn-secondary flex-1 justify-center text-xs">SVG</button>
         </div>
-      </div>
-
-      <!-- Legend -->
-      <div class="mt-auto pt-4 border-t border-gray-100">
-        <p class="text-xs text-gray-400 leading-relaxed">
-          <strong class="text-gray-500">Blue</strong> = even n (pairs/polygons) ·
-          <strong class="text-gray-500">Red</strong> = odd n (complex combination) ·
-          <strong class="text-gray-500">✗</strong> = cannot be balanced
-        </p>
       </div>
     </div>
   </aside>
