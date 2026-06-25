@@ -1,8 +1,9 @@
 // SVG rendering for centrifuge rotor cards
 
 export interface GapBadge {
-  length: number    // consecutive empty slot count
-  midAngle: number  // angle (radians) at midpoint of gap — badge placed here on the ring
+  length: number
+  midAngle: number
+  startSlot: number  // first empty slot index in the gap
 }
 
 export interface RenderOptions {
@@ -126,37 +127,45 @@ export function buildRotorSVG(opts: RenderOptions): SVGSVGElement {
     svg.appendChild(text)
   }
 
-  // Gap badges: one floating circle per qualifying gap arc
+  // Gap indicators: thin arc just outside empty dots, count label radially outside the arc
   if (gapBadges && gapBadges.length > 0) {
-    const sw = String(Math.max(size * 0.009, 0.8))
-    for (const gap of gapBadges) {
-      const bx = half + R * Math.cos(gap.midAngle)
-      const by = half + R * Math.sin(gap.midAngle)
-      const numStr = String(gap.length)
-      const br = size * (numStr.length > 1 ? 0.082 : 0.075)
-      const bFontSize = br * 1.15
+    const slotSpacing = (2 * Math.PI) / K
+    const arcR = R + edr + Math.max(size * 0.012, 1.2)
+    const textR = arcR + size * 0.055
+    const strokeW = Math.max(size * 0.009, 0.7)
+    const fontSize = size * 0.075
 
-      const bgCirc = document.createElementNS(ns, 'circle')
-      bgCirc.setAttribute('cx', String(bx))
-      bgCirc.setAttribute('cy', String(by))
-      bgCirc.setAttribute('r', String(br))
-      bgCirc.setAttribute('fill', 'white')
-      bgCirc.setAttribute('stroke', '#1a202c')
-      bgCirc.setAttribute('stroke-width', sw)
-      bgCirc.setAttribute('pointer-events', 'none')
-      svg.appendChild(bgCirc)
+    for (const gap of gapBadges) {
+      const arcStart = (2 * Math.PI * gap.startSlot / K) - Math.PI / 2 - slotSpacing / 2
+      const arcEnd = arcStart + gap.length * slotSpacing
+      const arcMid = arcStart + gap.length * slotSpacing / 2
+      const largeArc = gap.length * slotSpacing > Math.PI ? 1 : 0
+
+      const x1 = half + arcR * Math.cos(arcStart)
+      const y1 = half + arcR * Math.sin(arcStart)
+      const x2 = half + arcR * Math.cos(arcEnd)
+      const y2 = half + arcR * Math.sin(arcEnd)
+
+      const arc = document.createElementNS(ns, 'path')
+      arc.setAttribute('d', `M ${x1} ${y1} A ${arcR} ${arcR} 0 ${largeArc} 1 ${x2} ${y2}`)
+      arc.setAttribute('fill', 'none')
+      arc.setAttribute('stroke', '#1a202c')
+      arc.setAttribute('stroke-width', String(strokeW))
+      arc.setAttribute('stroke-linecap', 'round')
+      arc.setAttribute('pointer-events', 'none')
+      svg.appendChild(arc)
 
       const txt = document.createElementNS(ns, 'text')
-      txt.setAttribute('x', String(bx))
-      txt.setAttribute('y', String(by))
+      txt.setAttribute('x', String(half + textR * Math.cos(arcMid)))
+      txt.setAttribute('y', String(half + textR * Math.sin(arcMid)))
       txt.setAttribute('text-anchor', 'middle')
       txt.setAttribute('dominant-baseline', 'central')
       txt.setAttribute('font-family', 'system-ui, -apple-system, sans-serif')
-      txt.setAttribute('font-size', String(bFontSize))
+      txt.setAttribute('font-size', String(fontSize))
       txt.setAttribute('font-weight', '700')
       txt.setAttribute('fill', '#1a202c')
       txt.setAttribute('pointer-events', 'none')
-      txt.textContent = numStr
+      txt.textContent = String(gap.length)
       svg.appendChild(txt)
     }
   }

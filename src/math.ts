@@ -304,7 +304,7 @@ export function findAllConfigs(n: number, K: number, maxConfigs = 24): BalanceCo
   return results
 }
 
-export interface GapInfo { length: number; midAngle: number }
+export interface GapInfo { length: number; midAngle: number; startSlot: number }
 
 // Returns ALL consecutive runs of empty slots, sorted longest-first.
 // Walks from the first filled slot so wrap-around gaps appear contiguous.
@@ -327,14 +327,14 @@ export function findGaps(activeSlots: Set<number>, K: number): GapInfo[] {
       curLen++
     } else if (curLen > 0) {
       const midSlot = (curStart + curLen / 2) % K
-      gaps.push({ length: curLen, midAngle: (2 * Math.PI * midSlot) / K - Math.PI / 2 })
+      gaps.push({ length: curLen, midAngle: (2 * Math.PI * midSlot) / K - Math.PI / 2, startSlot: curStart })
       curLen = 0
     }
   }
   // Flush any trailing gap (wrap-around)
   if (curLen > 0) {
     const midSlot = (curStart + curLen / 2) % K
-    gaps.push({ length: curLen, midAngle: (2 * Math.PI * midSlot) / K - Math.PI / 2 })
+    gaps.push({ length: curLen, midAngle: (2 * Math.PI * midSlot) / K - Math.PI / 2, startSlot: curStart })
   }
 
   return gaps.sort((a, b) => b.length - a.length)
