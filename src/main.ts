@@ -208,10 +208,10 @@ function initApp(): void {
   }
 
   document.getElementById('export-poster-png')!.addEventListener('click', () => {
-    exportFullPoster(K, currentPosterCards(), pairColor, triangleColor, exportFormat)
+    exportFullPoster(K, currentPosterCards(), pairColor, triangleColor, exportFormat, showGapBadge, gapThreshold)
   })
   document.getElementById('export-poster-svg')!.addEventListener('click', () => {
-    exportPosterSVG(K, currentPosterCards(), pairColor, triangleColor, exportFormat)
+    exportPosterSVG(K, currentPosterCards(), pairColor, triangleColor, exportFormat, showGapBadge, gapThreshold)
   })
 
   // Info modal
