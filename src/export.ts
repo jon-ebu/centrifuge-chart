@@ -1,7 +1,7 @@
 // Client-side export utilities
 
 import { buildRotorSVG, buildInvalidSVG, svgToPngDataURL, svgToDataURL } from './render'
-import { isBalanceable } from './math'
+import { isBalanceable, findGaps } from './math'
 
 export function downloadURL(url: string, filename: string): void {
   const a = document.createElement('a')
@@ -45,7 +45,8 @@ const RING_R = 0.46
 function buildPosterSVG(
   K: number, posterCards: PosterCard[],
   pairColor: string, triColor: string,
-  format: PosterFormat
+  format: PosterFormat,
+  showGaps = false, gapThreshold = 4
 ): SVGSVGElement {
   const ns = 'http://www.w3.org/2000/svg'
 
@@ -164,6 +165,47 @@ function buildPosterSVG(
         c.setAttribute('stroke', 'none')
         svg.appendChild(c)
       }
+      // Gap arcs
+      if (showGaps) {
+        const gaps = findGaps(card.activeSlots, K).filter(g => g.length >= gapThreshold)
+        if (gaps.length > 0) {
+          const slotSpacing = (2 * Math.PI) / K
+          const arcR = R + fdr + Math.max(CARD * 0.028, 3.0)
+          const textR = arcR + CARD * 0.058
+          const strokeW = Math.max(CARD * 0.005, 0.45)
+          const fontSize = CARD * 0.072
+          const color = '#4b5563'
+          for (const gap of gaps) {
+            const firstAngle = (2 * Math.PI * gap.startSlot / K) - Math.PI / 2
+            const lastAngle = firstAngle + (gap.length - 1) * slotSpacing
+            const angPad = (edr / arcR) * 0.4
+            const arcStart = firstAngle - angPad
+            const arcEnd = lastAngle + angPad
+            const arcMid = (firstAngle + lastAngle) / 2
+            const largeArc = (arcEnd - arcStart) > Math.PI ? 1 : 0
+            const ax1 = cx + arcR * Math.cos(arcStart), ay1 = cy + arcR * Math.sin(arcStart)
+            const ax2 = cx + arcR * Math.cos(arcEnd), ay2 = cy + arcR * Math.sin(arcEnd)
+            const arc = document.createElementNS(ns, 'path')
+            arc.setAttribute('d', `M ${ax1} ${ay1} A ${arcR} ${arcR} 0 ${largeArc} 1 ${ax2} ${ay2}`)
+            arc.setAttribute('fill', 'none')
+            arc.setAttribute('stroke', color)
+            arc.setAttribute('stroke-width', String(strokeW))
+            arc.setAttribute('stroke-linecap', 'round')
+            svg.appendChild(arc)
+            const txt = document.createElementNS(ns, 'text')
+            txt.setAttribute('x', String(cx + textR * Math.cos(arcMid)))
+            txt.setAttribute('y', String(cy + textR * Math.sin(arcMid)))
+            txt.setAttribute('text-anchor', 'middle')
+            txt.setAttribute('dominant-baseline', 'central')
+            txt.setAttribute('font-family', 'system-ui, -apple-system, sans-serif')
+            txt.setAttribute('font-size', String(fontSize))
+            txt.setAttribute('font-weight', '400')
+            txt.setAttribute('fill', color)
+            txt.textContent = String(gap.length)
+            svg.appendChild(txt)
+          }
+        }
+      }
     }
 
     // Center label
@@ -185,9 +227,10 @@ function buildPosterSVG(
 export async function exportFullPoster(
   K: number, cardsData: PosterCard[],
   pairColor: string, triColor: string,
-  format: PosterFormat = 'default'
+  format: PosterFormat = 'default',
+  showGaps = false, gapThreshold = 4
 ): Promise<void> {
-  const svg = buildPosterSVG(K, cardsData, pairColor, triColor, format)
+  const svg = buildPosterSVG(K, cardsData, pairColor, triColor, format, showGaps, gapThreshold)
   let url: string
   if (format === 'default') {
     url = await svgToPngDataURL(svg, 3)
@@ -206,9 +249,10 @@ export async function exportFullPoster(
 export async function exportPosterSVG(
   K: number, cardsData: PosterCard[],
   pairColor: string, triColor: string,
-  format: PosterFormat = 'default'
+  format: PosterFormat = 'default',
+  showGaps = false, gapThreshold = 4
 ): Promise<void> {
-  const svg = buildPosterSVG(K, cardsData, pairColor, triColor, format)
+  const svg = buildPosterSVG(K, cardsData, pairColor, triColor, format, showGaps, gapThreshold)
   const suffix = format === 'default' ? '' : `-${format}`
   downloadURL(svgToDataURL(svg), `centrifuge-balance-chart-K${K}${suffix}.svg`)
 }

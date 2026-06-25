@@ -127,19 +127,24 @@ export function buildRotorSVG(opts: RenderOptions): SVGSVGElement {
     svg.appendChild(text)
   }
 
-  // Gap indicators: thin arc just outside empty dots, count label radially outside the arc
+  // Gap indicators: thin arc well clear of filled dots, count label outside the arc
   if (gapBadges && gapBadges.length > 0) {
     const slotSpacing = (2 * Math.PI) / K
-    const arcR = R + edr + Math.max(size * 0.012, 1.2)
-    const textR = arcR + size * 0.055
-    const strokeW = Math.max(size * 0.009, 0.7)
-    const fontSize = size * 0.075
+    const arcR = R + fdr + Math.max(size * 0.028, 3.0)  // clear of filled dot outer edge
+    const textR = arcR + size * 0.058
+    const strokeW = Math.max(size * 0.005, 0.45)
+    const fontSize = size * 0.072
+    const color = '#4b5563'
 
     for (const gap of gapBadges) {
-      const arcStart = (2 * Math.PI * gap.startSlot / K) - Math.PI / 2 - slotSpacing / 2
-      const arcEnd = arcStart + gap.length * slotSpacing
-      const arcMid = arcStart + gap.length * slotSpacing / 2
-      const largeArc = gap.length * slotSpacing > Math.PI ? 1 : 0
+      const firstAngle = (2 * Math.PI * gap.startSlot / K) - Math.PI / 2
+      const lastAngle = firstAngle + (gap.length - 1) * slotSpacing
+      const angPad = (edr / arcR) * 0.4  // slight inset from empty dot edge
+      const arcStart = firstAngle - angPad
+      const arcEnd = lastAngle + angPad
+      const arcMid = (firstAngle + lastAngle) / 2
+      const arcSpan = arcEnd - arcStart
+      const largeArc = arcSpan > Math.PI ? 1 : 0
 
       const x1 = half + arcR * Math.cos(arcStart)
       const y1 = half + arcR * Math.sin(arcStart)
@@ -149,7 +154,7 @@ export function buildRotorSVG(opts: RenderOptions): SVGSVGElement {
       const arc = document.createElementNS(ns, 'path')
       arc.setAttribute('d', `M ${x1} ${y1} A ${arcR} ${arcR} 0 ${largeArc} 1 ${x2} ${y2}`)
       arc.setAttribute('fill', 'none')
-      arc.setAttribute('stroke', '#1a202c')
+      arc.setAttribute('stroke', color)
       arc.setAttribute('stroke-width', String(strokeW))
       arc.setAttribute('stroke-linecap', 'round')
       arc.setAttribute('pointer-events', 'none')
@@ -162,8 +167,8 @@ export function buildRotorSVG(opts: RenderOptions): SVGSVGElement {
       txt.setAttribute('dominant-baseline', 'central')
       txt.setAttribute('font-family', 'system-ui, -apple-system, sans-serif')
       txt.setAttribute('font-size', String(fontSize))
-      txt.setAttribute('font-weight', '700')
-      txt.setAttribute('fill', '#1a202c')
+      txt.setAttribute('font-weight', '400')
+      txt.setAttribute('fill', color)
       txt.setAttribute('pointer-events', 'none')
       txt.textContent = String(gap.length)
       svg.appendChild(txt)
