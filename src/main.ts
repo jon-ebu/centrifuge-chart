@@ -14,7 +14,7 @@ interface CardState {
   altIndex: number
 }
 
-let K = 30
+let K = 24
 let cards: CardState[] = []
 let pairColor = '#3b82f6'
 let triangleColor = '#e53e3e'
@@ -271,7 +271,6 @@ function initApp(): void {
   const gapToggle = document.getElementById('gap-toggle') as HTMLInputElement
   const gapControls = document.getElementById('gap-controls')!
   const gapSlider = document.getElementById('gap-slider') as HTMLInputElement
-  const gapLabel = document.getElementById('gap-label')!
 
   gapToggle.addEventListener('change', () => {
     showGapBadge = gapToggle.checked
@@ -280,9 +279,11 @@ function initApp(): void {
   })
   gapSlider.value = String(gapThreshold)
   gapSlider.addEventListener('input', () => {
-    gapThreshold = parseInt(gapSlider.value, 10)
-    gapLabel.textContent = String(gapThreshold)
-    renderGrid()
+    const val = parseInt(gapSlider.value, 10)
+    if (!isNaN(val) && val >= 1 && val <= 20) {
+      gapThreshold = val
+      renderGrid()
+    }
   })
 }
 
