@@ -1,11 +1,7 @@
 import './style.css'
 import { uniquePrimeFactors, findConfig, findAllConfigs, findGaps, BalanceConfig } from './math'
 import { buildRotorSVG, buildInvalidSVG } from './render'
-import {
-  exportCardSVG, exportCardPNG,
-  exportFullPoster, exportPosterSVG,
-  PosterCard
-} from './export'
+import { exportFullPoster, exportPosterSVG, PosterCard, PosterFormat } from './export'
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
@@ -13,25 +9,21 @@ interface CardState {
   n: number
   balanceable: boolean
   activeSlots: Set<number>
-  fillColor: string
-  slotTypeMap: Map<number, number>  // slotIndex → polygon size for per-polygon coloring
-  alternatives: BalanceConfig[]     // all unique-up-to-rotation configs for this n
-  altIndex: number                  // which alternative is currently displayed
+  slotTypeMap: Map<number, number>
+  alternatives: BalanceConfig[]
+  altIndex: number
 }
 
 let K = 30
 let cards: CardState[] = []
-let selectedN: number | null = null
-let cardScale = 1.0        // user-adjustable card size multiplier
-let showGapBadge = false   // toggle: show longest-gap count on each card
-let gapThreshold = 4       // minimum gap length to show the badge
-let uniformColor = false   // toggle: all filled slots same color (blue) instead of per-polygon
+let pairColor = '#3b82f6'
+let triangleColor = '#e53e3e'
+let cardScale = 1.0
+let showGapBadge = false
+let gapThreshold = 4
+let exportFormat: PosterFormat = 'default'
 
-// ─── Math helpers ────────────────────────────────────────────────────────────
-
-function defaultColor(n: number): string {
-  return n % 2 === 0 ? '#3b82f6' : '#ef4444'
-}
+// ─── Cards ───────────────────────────────────────────────────────────────────
 
 function buildCards(k: number): CardState[] {
   const result: CardState[] = []
@@ -40,10 +32,9 @@ function buildCards(k: number): CardState[] {
     const balanceable = cfg !== null
     const alternatives = balanceable ? findAllConfigs(n, k) : []
     const activeSlots = cfg ? new Set(cfg.slots) : new Set<number>()
-    const fillColor = defaultColor(n)
     const slotTypeMap = new Map<number, number>()
     if (cfg) cfg.slots.forEach((s, i) => slotTypeMap.set(s, cfg.slotTypes[i]))
-    result.push({ n, balanceable, activeSlots, fillColor, slotTypeMap, alternatives, altIndex: 0 })
+    result.push({ n, balanceable, activeSlots, slotTypeMap, alternatives, altIndex: 0 })
   }
   return result
 }
@@ -58,18 +49,28 @@ function baseCardSize(k: number): number {
   return 136
 }
 
+function slotColorMap(slotTypeMap: Map<number, number>): Map<number, string> {
+  const m = new Map<number, string>()
+  for (const [slot, pType] of slotTypeMap) {
+    m.set(slot, pType === 3 ? triangleColor : pairColor)
+  }
+  return m
+}
+
 function cardSVG(card: CardState, cardSize: number): SVGSVGElement {
-  const slotTypeMap = uniformColor ? undefined : card.slotTypeMap
-  const fillColor = uniformColor ? '#3b82f6' : card.fillColor
   const gapBadges = showGapBadge && card.balanceable
     ? findGaps(card.activeSlots, K).filter(g => g.length >= gapThreshold)
     : undefined
   return card.balanceable
-    ? buildRotorSVG({ K, activeSlots: card.activeSlots, size: cardSize, fillColor, slotTypeMap, gapBadges, label: String(card.n) })
+    ? buildRotorSVG({
+        K, activeSlots: card.activeSlots, size: cardSize,
+        fillColor: pairColor,
+        slotColors: slotColorMap(card.slotTypeMap),
+        gapBadges, label: String(card.n),
+      })
     : buildInvalidSVG(cardSize, String(card.n))
 }
 
-// Refresh a single card's SVG + alt counter without rebuilding the whole grid.
 function refreshCard(n: number): void {
   const card = cards.find(c => c.n === n)!
   const wrapper = document.getElementById(`card-${n}`)
@@ -88,22 +89,20 @@ function refreshCard(n: number): void {
 function renderGrid(): void {
   const container = document.getElementById('grid')!
   container.innerHTML = ''
-
   const cardSize = Math.round(baseCardSize(K) * cardScale)
 
   cards.forEach(card => {
     const wrapper = document.createElement('div')
     wrapper.id = `card-${card.n}`
-    wrapper.className = card.balanceable ? 'card group relative' : 'card-invalid relative'
+    wrapper.className = card.balanceable ? 'card relative' : 'card-invalid relative'
     wrapper.style.width = `${cardSize}px`
     wrapper.style.height = `${cardSize}px`
-    wrapper.title = card.balanceable ? `n = ${card.n} — click to edit` : `n = ${card.n} — cannot be balanced`
+    wrapper.title = card.balanceable ? `n = ${card.n}` : `n = ${card.n} — cannot be balanced`
 
     const svgEl = cardSVG(card, cardSize)
     svgEl.style.display = 'block'
     wrapper.appendChild(svgEl)
 
-    // Alt navigation: prev/next arrows + counter (only when multiple alts exist)
     if (card.balanceable && card.alternatives.length > 1) {
       const bar = document.createElement('div')
       bar.className = 'absolute bottom-0.5 inset-x-0 flex items-center justify-center gap-0.5 pointer-events-none'
@@ -141,11 +140,6 @@ function renderGrid(): void {
       wrapper.appendChild(bar)
     }
 
-    if (card.balanceable) {
-      wrapper.style.cursor = 'pointer'
-      wrapper.addEventListener('click', () => openEditor(card.n))
-    }
-
     container.appendChild(wrapper)
   })
 }
@@ -157,56 +151,6 @@ function updateInfoBar(): void {
   document.getElementById('info-primes')!.textContent = primes.join(', ')
   const balanceable = cards.filter(c => c.balanceable).length
   document.getElementById('info-balanced')!.textContent = `${balanceable} / ${K}`
-}
-
-// ─── Editor ──────────────────────────────────────────────────────────────────
-
-function openEditor(n: number): void {
-  selectedN = n
-  const card = cards.find(c => c.n === n)!
-
-  const panel = document.getElementById('editor-panel')!
-  panel.classList.remove('hidden')
-  panel.classList.add('flex')
-
-  document.getElementById('editor-title')!.textContent = `n = ${n}`
-  const colorInput = document.getElementById('editor-fill-color') as HTMLInputElement
-  colorInput.value = card.fillColor
-
-  // Non-interactive preview of the current card config
-  const container = document.getElementById('editor-svg-container')!
-  container.innerHTML = ''
-  const svgEl = buildRotorSVG({
-    K,
-    activeSlots: card.activeSlots,
-    size: 300,
-    fillColor: uniformColor ? '#3b82f6' : card.fillColor,
-    slotTypeMap: uniformColor ? undefined : card.slotTypeMap,
-    label: String(n),
-  })
-  svgEl.style.display = 'block'
-  svgEl.style.margin = '0 auto'
-  container.appendChild(svgEl)
-
-  highlightSelectedCard(n)
-}
-
-function closeEditor(): void {
-  selectedN = null
-  document.getElementById('editor-panel')!.classList.add('hidden')
-  document.getElementById('editor-panel')!.classList.remove('flex')
-  clearCardHighlight()
-}
-
-function highlightSelectedCard(n: number): void {
-  clearCardHighlight()
-  document.getElementById(`card-${n}`)?.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2')
-}
-
-function clearCardHighlight(): void {
-  document.querySelectorAll('#grid > div').forEach(el => {
-    el.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2')
-  })
 }
 
 // ─── Initialization ──────────────────────────────────────────────────────────
@@ -221,13 +165,9 @@ function initApp(): void {
   kInput.value = String(K)
   kInput.addEventListener('change', () => {
     const val = parseInt(kInput.value, 10)
-    if (isNaN(val) || val < 6 || val > 48) {
-      kInput.value = String(K)
-      return
-    }
+    if (isNaN(val) || val < 6 || val > 48) { kInput.value = String(K); return }
     K = val
     cards = buildCards(K)
-    closeEditor()
     renderGrid()
     updateInfoBar()
   })
@@ -239,7 +179,6 @@ function initApp(): void {
       K = val
       kInput.value = String(K)
       cards = buildCards(K)
-      closeEditor()
       renderGrid()
       updateInfoBar()
       document.querySelectorAll('[data-k]').forEach(b => b.classList.remove('bg-blue-600', 'text-white'))
@@ -247,62 +186,33 @@ function initApp(): void {
     })
   })
 
-  // Editor close
-  document.getElementById('editor-close')!.addEventListener('click', closeEditor)
+  // Global color pickers
+  const pairInput = document.getElementById('pair-color') as HTMLInputElement
+  const triInput = document.getElementById('triangle-color') as HTMLInputElement
+  pairInput.addEventListener('input', () => { pairColor = pairInput.value; renderGrid() })
+  triInput.addEventListener('input', () => { triangleColor = triInput.value; renderGrid() })
 
-  // Color picker — apply immediately to grid card and update editor preview
-  const colorInput = document.getElementById('editor-fill-color') as HTMLInputElement
-  colorInput.addEventListener('input', () => {
-    if (selectedN === null) return
-    const card = cards.find(c => c.n === selectedN)!
-    card.fillColor = colorInput.value
-    refreshCard(card.n)
-    // Refresh editor preview too
-    const container = document.getElementById('editor-svg-container')!
-    container.innerHTML = ''
-    const svgEl = buildRotorSVG({
-      K, activeSlots: card.activeSlots, size: 300,
-      fillColor: uniformColor ? '#3b82f6' : card.fillColor,
-      slotTypeMap: uniformColor ? undefined : card.slotTypeMap,
-      label: String(card.n),
-    })
-    svgEl.style.display = 'block'
-    svgEl.style.margin = '0 auto'
-    container.appendChild(svgEl)
-  })
+  // Export format selector
+  const formatSelect = document.getElementById('export-format') as HTMLSelectElement
+  formatSelect.addEventListener('change', () => { exportFormat = formatSelect.value as PosterFormat })
 
-  // Editor export buttons
-  document.getElementById('editor-export-svg')!.addEventListener('click', () => {
-    if (selectedN === null) return
-    const card = cards.find(c => c.n === selectedN)!
-    exportCardSVG(selectedN, K, card.activeSlots, card.fillColor, new Map())
-  })
-  document.getElementById('editor-export-png')!.addEventListener('click', () => {
-    if (selectedN === null) return
-    const card = cards.find(c => c.n === selectedN)!
-    exportCardPNG(selectedN, K, card.activeSlots, card.fillColor, new Map())
-  })
-
-  // Poster export — snapshot current card states (respects alt navigation + uniform color)
+  // Poster export
   function currentPosterCards(): PosterCard[] {
     return cards.map(c => ({
       n: c.n,
       balanceable: c.balanceable,
       activeSlots: c.activeSlots,
-      fillColor: uniformColor ? '#3b82f6' : c.fillColor,
-      slotTypeMap: uniformColor ? new Map() : c.slotTypeMap,
+      fillColor: pairColor,
+      slotTypeMap: c.slotTypeMap,
     }))
   }
 
   document.getElementById('export-poster-png')!.addEventListener('click', () => {
-    exportFullPoster(K, currentPosterCards())
+    exportFullPoster(K, currentPosterCards(), pairColor, triangleColor, exportFormat)
   })
   document.getElementById('export-poster-svg')!.addEventListener('click', () => {
-    exportPosterSVG(K, currentPosterCards())
+    exportPosterSVG(K, currentPosterCards(), pairColor, triangleColor, exportFormat)
   })
-
-  // Close editor on backdrop click
-  document.getElementById('editor-backdrop')!.addEventListener('click', closeEditor)
 
   // Info modal
   function openInfo() {
@@ -325,13 +235,6 @@ function initApp(): void {
   sizeSlider.addEventListener('input', () => {
     cardScale = parseFloat(sizeSlider.value)
     sizeLabel.textContent = `${Math.round(cardScale * 100)}%`
-    renderGrid()
-  })
-
-  // Uniform color toggle
-  const colorToggle = document.getElementById('uniform-color-toggle') as HTMLInputElement
-  colorToggle.addEventListener('change', () => {
-    uniformColor = colorToggle.checked
     renderGrid()
   })
 
