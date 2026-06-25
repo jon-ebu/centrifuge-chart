@@ -42,7 +42,7 @@ export type PosterFormat = 'default' | 'letter-portrait' | 'letter-landscape'
 
 const RING_R = 0.46
 
-function buildPosterSVG(
+export function buildPosterSVG(
   K: number, posterCards: PosterCard[],
   pairColor: string, triColor: string,
   format: PosterFormat,

@@ -1,7 +1,7 @@
 import './style.css'
 import { uniquePrimeFactors, findConfig, findAllConfigs, findGaps, BalanceConfig } from './math'
 import { buildRotorSVG, buildInvalidSVG } from './render'
-import { exportFullPoster, exportPosterSVG, PosterCard, PosterFormat } from './export'
+import { exportFullPoster, exportPosterSVG, buildPosterSVG, PosterCard, PosterFormat } from './export'
 
 // ─── State ──────────────────────────────────────────────────────────────────
 
@@ -192,11 +192,7 @@ function initApp(): void {
   pairInput.addEventListener('input', () => { pairColor = pairInput.value; renderGrid() })
   triInput.addEventListener('input', () => { triangleColor = triInput.value; renderGrid() })
 
-  // Export format selector
-  const formatSelect = document.getElementById('export-format') as HTMLSelectElement
-  formatSelect.addEventListener('change', () => { exportFormat = formatSelect.value as PosterFormat })
-
-  // Poster export
+  // Poster cards snapshot
   function currentPosterCards(): PosterCard[] {
     return cards.map(c => ({
       n: c.n,
@@ -206,6 +202,39 @@ function initApp(): void {
       slotTypeMap: c.slotTypeMap,
     }))
   }
+
+  // Export modal
+  function renderExportPreview(): void {
+    const preview = document.getElementById('export-preview')!
+    preview.innerHTML = ''
+    const svg = buildPosterSVG(K, currentPosterCards(), pairColor, triangleColor, exportFormat, showGapBadge, gapThreshold)
+    svg.setAttribute('width', '100%')
+    svg.removeAttribute('height')
+    svg.style.display = 'block'
+    preview.appendChild(svg)
+  }
+
+  function openExportModal(): void {
+    document.getElementById('export-modal')!.classList.remove('hidden')
+    document.getElementById('export-modal-backdrop')!.classList.remove('hidden')
+    renderExportPreview()
+  }
+
+  function closeExportModal(): void {
+    document.getElementById('export-modal')!.classList.add('hidden')
+    document.getElementById('export-modal-backdrop')!.classList.add('hidden')
+  }
+
+  document.getElementById('export-btn')!.addEventListener('click', openExportModal)
+  document.getElementById('export-modal-close')!.addEventListener('click', closeExportModal)
+  document.getElementById('export-modal-cancel')!.addEventListener('click', closeExportModal)
+  document.getElementById('export-modal-backdrop')!.addEventListener('click', closeExportModal)
+
+  const formatSelect = document.getElementById('export-format') as HTMLSelectElement
+  formatSelect.addEventListener('change', () => {
+    exportFormat = formatSelect.value as PosterFormat
+    renderExportPreview()
+  })
 
   document.getElementById('export-poster-png')!.addEventListener('click', () => {
     exportFullPoster(K, currentPosterCards(), pairColor, triangleColor, exportFormat, showGapBadge, gapThreshold)

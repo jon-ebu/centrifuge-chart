@@ -68,22 +68,11 @@
         How it works
       </button>
 
-      <!-- Export buttons -->
-      <div class="flex items-center gap-2 no-print">
-        <select id="export-format" class="text-xs border border-gray-300 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-          <option value="default">Default</option>
-          <option value="letter-portrait">8.5×11 Portrait</option>
-          <option value="letter-landscape">11×8.5 Landscape</option>
-        </select>
-        <button id="export-poster-png" class="btn-secondary text-xs gap-1.5">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
-          PNG
-        </button>
-        <button id="export-poster-svg" class="btn-secondary text-xs gap-1.5">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
-          SVG
-        </button>
-      </div>
+      <!-- Export button -->
+      <button id="export-btn" class="btn-secondary text-xs gap-1.5 no-print">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+        Export
+      </button>
     </div>
 
     <!-- Info bar -->
@@ -123,6 +112,52 @@
     ></div>
   </main>
 
+
+  <!-- Export modal -->
+  <div id="export-modal-backdrop" class="fixed inset-0 bg-black/40 z-50 hidden no-print" aria-hidden="true"></div>
+  <div id="export-modal" class="fixed inset-0 z-50 hidden no-print overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+    <div class="min-h-full flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl flex flex-col">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+          <h2 id="export-modal-title" class="text-base font-bold text-gray-900">Export Poster</h2>
+          <button id="export-modal-close" class="btn-ghost p-1.5 -mr-1 text-gray-400 hover:text-gray-700" title="Close">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/></svg>
+          </button>
+        </div>
+
+        <!-- Format selector -->
+        <div class="px-6 py-3 border-b border-gray-100 flex items-center gap-3 flex-shrink-0">
+          <label for="export-format" class="text-sm font-medium text-gray-700 whitespace-nowrap">Format:</label>
+          <select id="export-format" class="text-sm border border-gray-300 rounded-lg px-2 py-1.5 text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            <option value="default">Default</option>
+            <option value="letter-portrait">8.5×11 Portrait</option>
+            <option value="letter-landscape">11×8.5 Landscape</option>
+          </select>
+        </div>
+
+        <!-- Preview -->
+        <div id="export-preview" class="px-4 py-4 bg-gray-50 overflow-auto flex justify-center" style="max-height: 60vh; min-height: 200px;">
+          <!-- SVG preview rendered here by main.ts -->
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-2 flex-shrink-0">
+          <button id="export-modal-cancel" class="btn-ghost text-sm px-4 py-2">Cancel</button>
+          <button id="export-poster-svg" class="btn-secondary text-sm gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            Download SVG
+          </button>
+          <button id="export-poster-png" class="btn-primary text-sm gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg>
+            Download PNG
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <!-- Info modal -->
   <div id="info-backdrop" class="fixed inset-0 bg-black/40 z-50 hidden no-print" aria-hidden="true"></div>
