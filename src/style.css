@@ -98,11 +98,11 @@ button, a, input, select, label {
     height: 20px !important;
   }
 
-  /* Gap number picker */
-  #gap-slider {
+  /* Gap stepper buttons */
+  #gap-dec, #gap-inc {
     min-height: 44px !important;
-    font-size: 16px !important;
-    width: 5rem !important;
+    min-width: 44px !important;
+    font-size: 1.1rem !important;
   }
 
   /* Card alt-nav buttons */

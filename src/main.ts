@@ -270,21 +270,22 @@ function initApp(): void {
   // Gap badge toggle + threshold
   const gapToggle = document.getElementById('gap-toggle') as HTMLInputElement
   const gapControls = document.getElementById('gap-controls')!
-  const gapSlider = document.getElementById('gap-slider') as HTMLInputElement
+  const gapLabel = document.getElementById('gap-label')!
 
   gapToggle.addEventListener('change', () => {
     showGapBadge = gapToggle.checked
     gapControls.classList.toggle('hidden', !showGapBadge)
     renderGrid()
   })
-  gapSlider.value = String(gapThreshold)
-  gapSlider.addEventListener('input', () => {
-    const val = parseInt(gapSlider.value, 10)
-    if (!isNaN(val) && val >= 1 && val <= 20) {
-      gapThreshold = val
-      renderGrid()
-    }
-  })
+
+  function setGapThreshold(val: number): void {
+    gapThreshold = Math.max(1, Math.min(20, val))
+    gapLabel.textContent = String(gapThreshold)
+    renderGrid()
+  }
+
+  document.getElementById('gap-dec')!.addEventListener('click', () => setGapThreshold(gapThreshold - 1))
+  document.getElementById('gap-inc')!.addEventListener('click', () => setGapThreshold(gapThreshold + 1))
 }
 
 document.addEventListener('DOMContentLoaded', initApp)
