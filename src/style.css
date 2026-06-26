@@ -17,6 +17,7 @@
   }
   .btn {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150;
+    touch-action: manipulation;
   }
   .btn-primary {
     @apply btn bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800;
@@ -41,6 +42,25 @@
 }
 .slot-circle:hover {
   filter: brightness(1.15);
+}
+
+/* Prevent iOS zoom-on-focus: all inputs must be ≥16px font on mobile */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Kill sticky hover states on touch devices */
+@media (hover: none) {
+  .card:hover { box-shadow: none; }
+  .btn:hover { background-color: inherit; }
+  .slot-circle:hover { filter: none; }
+}
+
+/* touch-action on all interactive elements to remove 300ms tap delay */
+button, a, input, select, label {
+  touch-action: manipulation;
 }
 
 /* Print styles */
