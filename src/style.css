@@ -63,6 +63,61 @@ button, a, input, select, label {
   touch-action: manipulation;
 }
 
+/* ── Mobile touch targets (≥44px) ────────────────────────────────── */
+@media (hover: none), (max-width: 640px) {
+  /* Header buttons: presets, export, info */
+  .btn-ghost, .btn-secondary, .btn-primary {
+    min-height: 44px;
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+
+  /* K preset quick-select buttons */
+  [data-k] {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* K number input */
+  #k-input {
+    min-height: 44px !important;
+    font-size: 16px !important;
+  }
+
+  /* Color pickers — make the swatch larger */
+  #pair-color, #triangle-color {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
+  /* Gap toggle checkbox */
+  #gap-toggle {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* Gap number picker */
+  #gap-slider {
+    min-height: 44px !important;
+    font-size: 16px !important;
+    width: 5rem !important;
+  }
+
+  /* Card alt-nav buttons */
+  .alt-nav-btn {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 1.25rem !important;
+  }
+
+  /* Export modal buttons */
+  #export-poster-png, #export-poster-svg, #export-modal-cancel, #export-modal-close {
+    min-height: 44px !important;
+  }
+}
+
 /* Print styles */
 @media print {
   .no-print { display: none !important; }

@@ -109,7 +109,7 @@ function renderGrid(): void {
 
       const makeBtn = (label: string, title: string, onClick: () => void) => {
         const btn = document.createElement('button')
-        btn.className = 'pointer-events-auto text-gray-500 hover:text-gray-700 w-7 h-7 flex items-center justify-center rounded text-base leading-none transition-colors hover:bg-gray-100'
+        btn.className = 'alt-nav-btn pointer-events-auto text-gray-500 hover:text-gray-700 flex items-center justify-center rounded text-base leading-none transition-colors hover:bg-gray-100'
         btn.textContent = label
         btn.title = title
         btn.addEventListener('click', (e) => { e.stopPropagation(); onClick() })
@@ -117,7 +117,7 @@ function renderGrid(): void {
       }
 
       const counter = document.createElement('span')
-      counter.className = 'alt-counter text-xs text-gray-500 font-mono w-9 text-center pointer-events-none'
+      counter.className = 'alt-counter text-xs text-gray-500 font-mono w-10 text-center pointer-events-none'
       counter.textContent = `${card.altIndex + 1}/${card.alternatives.length}`
 
       bar.appendChild(makeBtn('‹', 'Previous arrangement', () => {
